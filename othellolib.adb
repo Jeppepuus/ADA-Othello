@@ -1,27 +1,30 @@
 with Ada.Text_IO; use Ada.Text_IO;
 
-package body OthelloLib is
+package body OthelloLib is -- Used to define this as a library to be used in Othello.adb
 
    package Int_IO is new Ada.Text_IO.Integer_IO (Integer);
    use Int_IO;
 
+-- This is a procedure that is used to display the board in the terminal
    procedure Show_Board(Board : in T_Board) is
    begin
-      for Lin in Board'Range(1) loop
-         for Col in Board'Range(2) loop
-            Put("[" & Board(Lin, Col) & "]");
+      for Lin in Board'Range(1) loop -- Loops through all the lines of the board
+         for Col in Board'Range(2) loop -- Loops though all the rows of the board
+            Put("[" & Board(Lin, Col) & "]"); -- Prints the content of the cell
          end loop;
-         New_Line;
+         New_Line; -- After a row has been completed it breaks the line and starts a new
       end loop;
       New_Line;
    end Show_Board;   
-       
+
+-- This is a function that handles everything that is needed between
    procedure Maintenence (Board     : in T_Board;   
                           Game_Over : in out Boolean;  
                           Player    : in Player_Turn     
    ) is  
-     Nb_O,Nb_X,Nb_null : Integer := 0;            
-   begin     
+     Nb_O,Nb_X,Nb_null : Integer := 0; -- Initialize the numbers that will be used to count the number of O's X's and empty squares            
+   begin
+      -- A loop that is used to count the number of each type of square between every round
       for Lin in Board'Range(1) loop   
          for Col in Board'Range(2) loop   
              if Board(Lin,Col) = 'X' then 
@@ -32,39 +35,45 @@ package body OthelloLib is
                 Nb_Null := Nb_Null + 1;   
              end if;    
          end loop;      
-     end loop;          
-         
+     end loop;    
+
+     -- Prints to terminal what player's move it is    
      if Player = O_Move then  
         Put_Line("O to move");   
      else           
         Put_Line("X to move");   
      end if;        
-         
+
+     -- Updates the Scores and prints to terminal
      Put_Line("O : " & Integer'Image(Nb_O)); 
      Put_Line("X : " & Integer'Image(Nb_X)); 
-                 
+
+     -- Checks to see if all squares are covered, if they are game is over
      if Nb_X + Nb_O = 64 then 
         Game_Over := True;    
         if Nb_O > Nb_X then   
-           Put_Line("White wins");  
+           Put_Line("White wins");  -- White wins
         elsif Nb_O < Nb_X then      
-           Put_Line("Black wins");  
+           Put_Line("Black wins");  -- Black wins
         else               
-           Put_Line("Game tied");   
+           Put_Line("Game tied"); 
         end if;  
      end if;
    end Maintenence;
 
+   -- Function that asks from standard input where the player wants to move next
+   -- Returns a tuple called position
    function Ask_Where return Position is
       P : Position;
    begin
       Put("Hvilken rad? (1–8): ");
-      Get(P.Lin);
+      Get(P.Lin); -- Gets the line standard input
       Put("Hvilken kolonne? (1–8): ");
-      Get(P.Col);
+      Get(P.Col);  -- Gets the row from standard input
       return P;
    end Ask_Where;
 
+ 
    procedure Check_Recursive (
       Board         : in out T_Board;
       Now           : in Position;
