@@ -73,17 +73,20 @@ package body OthelloLib is -- Used to define this as a library to be used in Oth
       return P;
    end Ask_Where;
 
- 
+   -- this is is a function that first checks if a move is legal or not, 
+   -- if it is it will turn all the pieces to the color of Player
+   -- if not, it will not turn any pieces
    procedure Check_Recursive (
-      Board         : in out T_Board;
-      Now           : in Position;
-      Direction     : in Search_Direction;
-      Player        : in Character;
-      Adversary     : in Character;
-      Found         : out Boolean
+      Board         : in out T_Board;         -- The current game board
+      Now           : in Position;            -- A square (Where the last piece was placed, but will change with every iteration)
+      Direction     : in Search_Direction;    -- The direction of which we'll check recursivly
+      Player        : in Character;           -- Active player (White or black)
+      Adversary     : in Character;           -- Inactive player (White or black)
+      Found         : out Boolean             -- A boolean that is set to true if the move is legal
    ) is
-      Next : Position;
+      Next : Position;                        -- The square that will be checked next iteration (depens on Direction)
    begin
+         -- This is a case that will define the variable next depending on what direction we're checking
       case Direction is
          when Up_Left     => Next := (Lin => Now.Lin - 1, Col => Now.Col - 1);
          when Up          => Next := (Lin => Now.Lin - 1, Col => Now.Col    );
@@ -95,29 +98,35 @@ package body OthelloLib is -- Used to define this as a library to be used in Oth
          when Left        => Next := (Lin => Now.Lin    , Col => Now.Col - 1);
       end case;
 
+      -- Checks if we're out of bounds
       if Next.Lin not in 1 .. 8 or Next.Col not in 1 .. 8 then
-         Found := False;
+         Found := False; -- Since we have not encoutered a piece of our own colour and there is no more pieces to check we set found to False
          return;
       end if;
 
+      -- Now that we know our next piece is within bounds we check to see what type of Charachter is confined within the "cell" at it's coordinates
       declare
          Cell : Character := Board(Next.Lin, Next.Col);
       begin
-         if Cell = ' ' then
+         if Cell = ' ' then -- There is nothing there, we stop the recursion there is nothing more to check
             Found := False;
          elsif Cell = Player then
-            Found := True;
-         elsif Cell = Adversary then
-            Check_Recursive(Board, Next, Direction, Player, Adversary, Found);
-            if Found then
+            Found := True;  -- We found ourselves! We set Found to true so we turn the pieces when redecending the recursive tree
+         elsif Cell = Adversary then -- We found an enemy piece, we have to keep looking
+            Check_Recursive(Board, Next, Direction, Player, Adversary, Found); -- We call upon the function to keep looking
+
+            if Found then -- This is the code that facilitates the turning of the pieces as we redecend the recursive tree
                Board(Next.Lin, Next.Col) := Player;
             end if;
-         else
+
+         else -- This is redundant
             Found := False;
          end if;
       end;
    end Check_Recursive;
 
+
+-- This function checks if a move is valid, and if it is it calls upon the check_recursive procedure to turn the pieces
 function Check_Valid (
    Board         : in out T_Board;
    Where         : in Position;
@@ -135,6 +144,13 @@ begin
       Adversary := 'O';
    end if;
 
+
+   -- This is the part of the code I'm least proud of, I since know how to write cleaner code
+   -- I however will be leaving it as is because this was my first ever project, and it's an example of something I learned the hard way "not to do"
+   -- When i made this I could not get a for loop with every direction to work since the out of bounds check varies, I did not think to pair them up, so it left me with this
+
+   -- It checks that you won't be going out of bounds by calling upon check_recursive, if you won't I calls upon the check recursive to turn the pieces
+   -- If for some reason none of the directions work it stores False in Is_Valid so we can later ask the player to find another move
    -- UP-LEFT
    if Where.Lin > 2 and Where.Col > 2 then
       if Board(Where.Lin - 1, Where.Col - 1) = Adversary then
@@ -210,7 +226,7 @@ begin
    return Is_Valid;
 end Check_Valid;
 
-
+   -- This is the procedure that ties it all together to make a move
    procedure Make_Move (
       Board         : in out T_Board;
       Active_Player : in out Player_Turn
@@ -218,25 +234,34 @@ end Check_Valid;
       Where       : Position;
       Valid_Move  : Boolean;
    begin          
-                  
+
+      -- Uses Ask_Where function to return a tuple coordinate and checks if the square isn't already occupied
+      -- If occupied, return nothing
+      -- If not Continue
       Where := Ask_Where;                            
       if Board(Where.Lin, Where.Col) /= ' ' then
-          Put_Line("Opptatt, prøv igjen bitch!.");
+          Put_Line("Square Occupied! Try again please!.");
           return;
       end if;
 
+      -- Now that we know the square is empty we check if the move is valid
+      -- Funnily enough, due to my bad naming scheme, the function that checks if it's valid also makes the changes on the board nessecary
+      -- This I would make sure not to do today
       Valid_Move := Check_Valid(Board, Where, Active_Player);
-                 
+
+      -- The Valid_Move function only turns the already places pieces,
+      -- If it turns out the move was valid we have to draw the actual piece placed,
+      -- If a piece is placed we also swap Active_Player
       if Valid_Move and Active_Player = O_Move then
-         Board(Where.Lin, Where.Col) := 'O';
-         Active_Player := X_Move;
+         Board(Where.Lin, Where.Col) := 'O';  -- Draw piece
+         Active_Player := X_Move;  -- Switch turn
 
        elsif Valid_Move and Active_Player = X_Move then
-         Board(Where.Lin, Where.Col) := 'X';
-         Active_Player := O_Move;
+         Board(Where.Lin, Where.Col) := 'X'; - Draw piece
+         Active_Player := O_Move; -- Switch turn
 
        else
-          Put_Line("Invalid move, try again");
+          Put_Line("Invalid move, try again"); -- No move was made, nothing is done
          end if;
    end Make_Move;
 
